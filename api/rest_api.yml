@@ -1,0 +1,683 @@
+openapi: 3.0.3
+info:
+  title: Swagger social network - OpenAPI 3.0
+  description: This is a design for Social Network based on the OpenAPI 3.0 specification
+  contact:
+    email: sausernsunny@gmail.com
+  version: 1.0.0
+externalDocs:
+  description: Find out more in GitHub repo
+  url: 'https://github.com/SleeplessChallenger/social_network_system_design'
+tags:
+  - name: friend
+    description: Everything about your friends
+  - name: user
+    description: Everything related to the user
+  - name: post
+    description: Everything related to the post
+  - name: feed
+    description: Everything related to the feed
+  - name: chat
+    description: Everything related to chats
+paths:
+  # briefly about SSO: https://security.stackexchange.com/questions/168148/where-are-passwords-stored-in-saml-on-the-idp-or-on-the-sp-side
+  /friends:
+    post:
+      tags:
+        - friend
+      summary: Add a new friend
+      description: Add a new friend
+      operationId: addFriend
+      requestBody:
+        description: |-
+          Add a new friend to the current user. Use only user_id (better use some system_id rather than primary key)
+          so as not to couple API to the particular primary key of the database
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewFriend'
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/friendResponse'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '500':
+          $ref: '#/components/responses/serverError'
+      security:
+        - bearerAuth: []
+    delete:
+      tags:
+        - friend
+      summary: Delete user from friends
+      description: Delete user from friends
+      operationId: deleteFriend
+      parameters:
+        - name: friendId
+          in: query
+          description: Param for the user to be deleted
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          $ref: '#/components/responses/friendResponse'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '403':
+          # If user wants to delete another user's friend
+          $ref: '#/components/responses/notEnoughRights'
+        '500':
+          $ref: '#/components/responses/serverError'
+      security:
+        - bearerAuth: []
+  '/friends/AllUserFriends/{userId}':
+    get:
+      summary: List of all friends of the user
+      tags:
+        - friend
+      responses:
+        '200':
+          $ref: '#/components/responses/allFriends'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '404':
+          $ref: '#/components/responses/notFound'
+      operationId: showAllFriends
+      x-stoplight:
+        id: 8xg40xu6f54il
+      description: List of all friends of the user
+      security:
+        - bearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/userId'
+  '/users/info/{userId}':
+    parameters:
+      - $ref: '#/components/parameters/userId'
+    get:
+      summary: Get User Info
+      tags:
+        - user
+      responses:
+        '200':
+          $ref: '#/components/responses/userAbout'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '403':
+          $ref: '#/components/responses/notEnoughRights'
+        '404':
+          $ref: '#/components/responses/notFound'
+        '500':
+          $ref: '#/components/responses/serverError'
+      operationId: getUsersInfo
+      x-stoplight:
+        id: 1loz7s3apzq16
+      security:
+        - bearerAuth: []
+  /user/post:
+    post:
+      summary: Add new post
+      tags:
+        - post
+      responses:
+        '200':
+          $ref: '#/components/responses/addedNewPost'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '500':
+          $ref: '#/components/responses/serverError'
+      operationId: AddUserPost
+      x-stoplight:
+        id: 0jccr8rv0vc7n
+      description: Add a new post to newsline
+      requestBody:
+        $ref: '#/components/requestBodies/Post'
+      security:
+        - bearerAuth: []
+  /user/data:
+    post:
+      summary: Send media
+      tags:
+        - post
+      responses:
+        '200':
+          description: Data has been loaded
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        5XX:
+          $ref: '#/components/responses/serverError'
+      operationId: postData
+      x-stoplight:
+        id: x55r5u6j49fmc
+      requestBody:
+        $ref: '#/components/requestBodies/MediaData'
+      security:
+        - bearerAuth: []
+    delete:
+      summary: Delete a existing media
+      tags:
+        - post
+      responses:
+        '200':
+          description: Data successfully has been deleted
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '404':
+          $ref: '#/components/responses/dataNotFound'
+      operationId: deleteData
+      x-stoplight:
+        id: 3ubyd6ux5xitv
+      description: Delete a existing static media file by id
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          in: query
+          name: data_id
+      security:
+        - bearerAuth: []
+  '/feed/user/{userId}':
+    parameters:
+      - $ref: '#/components/parameters/userId'
+    get:
+      summary: Get feed page of User
+      tags:
+        - feed
+      responses:
+        '200':
+          $ref: '#/components/responses/userFeed'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '403':
+          $ref: '#/components/responses/notEnoughRights'
+        '404':
+          $ref: '#/components/responses/notFound'
+        '500':
+          $ref: '#/components/responses/serverError'
+      operationId: get-feed-user-userId
+      x-stoplight:
+        id: ybalhc250xj3x
+      description: This endpoint allows to see the feed page of the user
+      security:
+        - bearerAuth: []
+  /feed/home:
+    get:
+      summary: Get Home feed page
+      tags:
+        - feed
+      responses:
+        '200':
+          $ref: '#/components/responses/homeFeed'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '500':
+          $ref: '#/components/responses/serverError'
+      operationId: getFeedHome
+      x-stoplight:
+        id: bpkc1jxiyy8l8
+      description: This endpoint allows to the overall home page
+      security:
+        - bearerAuth: []
+  '/chats/{userId}':
+    parameters:
+      - $ref: '#/components/parameters/userId'
+    get:
+      summary: Get Chats overview list
+      tags:
+        - chat
+      responses:
+        '200':
+          $ref: '#/components/responses/MessageOverview'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '403':
+          $ref: '#/components/responses/notEnoughRights'
+        '404':
+          $ref: '#/components/responses/notFound'
+        '500':
+          $ref: '#/components/responses/serverError'
+      operationId: get-chats-userId
+      x-stoplight:
+        id: icd4g5aj8ztiw
+      description: 'Here user can see chats and messages. But not content, just overall info about chats (like what we see when we enter TG or VK in messages)'
+      security:
+        - bearerAuth: []
+  '/messages/{chatId}':
+    parameters:
+      - schema:
+          type: string
+        name: chatId
+        in: path
+        required: true
+      - schema:
+          type: string
+          format: uuid
+        name: chatId
+        in: path
+        required: true
+    get:
+      summary: Get messages of chat
+      tags: [chat]
+      responses:
+        '200':
+          $ref: '#/components/responses/ChatMessagesResponse'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '404':
+          $ref: '#/components/responses/ChatNotFound'
+        '500':
+          $ref: '#/components/responses/serverError'
+      operationId: getMessagesbyChat
+      x-stoplight:
+        id: 9dhw1b3agsgjz
+      security:
+        - bearerAuth: []
+    post:
+      summary: Send message
+      tags: [chat]
+      responses:
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '404':
+          $ref: '#/components/responses/ChatNotFound'
+        '500':
+          $ref: '#/components/responses/serverError'
+        2XX:
+          $ref: '#/components/responses/addedMessage'
+      operationId: AddMesssage
+      x-stoplight:
+        id: oalg3gxh5r3g3
+      security:
+        - bearerAuth: []
+components:
+  schemas:
+    NewFriend:
+      type: object
+      required:
+        - user_id
+      properties:
+        user_id:
+          type: string
+          format: uuid
+    Friend:
+      type: object
+      required:
+        - user_id
+        - name
+        - surname
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        surname:
+          type: string
+        age:
+          type: integer
+          format: int64
+    Error:
+      type: object
+      required:
+        - error_id
+        - message
+        - code
+        - msg_description
+      properties:
+        error_id:
+          description: unique id for tracking errors in logs
+          type: string
+        message:
+          type: string
+          description: full description of the error for devs
+        code:
+          type: integer
+          description: http code of the error
+        msg_description:
+          type: string
+          description: full description of the error for users
+    AboutPage:
+      type: object
+      required:
+        - user_id
+        - name
+        - surname
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        surname:
+          type: string
+        age:
+          type: integer
+          format: int64
+        phone_number:
+          type: integer
+          format: int64
+        image:
+          type: string
+          description: store only name/location of the file in main database and real image somewhere else
+        friends:
+          type: array
+          items:
+            $ref: '#/components/schemas/Friend'
+        interests:
+          type: string
+        city:
+          type: string
+      description: Scheme for 'about' page of user
+      title: ''
+    UserId:
+      title: UserId
+      x-stoplight:
+        id: 2ttptj86x6749
+      type: object
+      properties:
+        user_id:
+          type: string
+          x-stoplight:
+            id: hf0j6btcaw6kf
+          format: uuid
+      description: UserId field
+    MediaData:
+      title: MediaData
+      x-stoplight:
+        id: jqyy0c0yc1wr8
+      type: object
+      description: Some media data for post/chat
+      required:
+        - file
+      properties:
+        file:
+          type: array
+          x-stoplight:
+            id: bn86thncoaavb
+          items:
+            x-stoplight:
+              id: khwpp2y34aung
+            type: string
+            format: binary
+    Comment:
+      title: Comment
+      x-stoplight:
+        id: yeftuh5k7goik
+      type: object
+      required:
+        - comment_id
+        - content
+        - author
+      properties:
+        comment_id:
+          type: string
+          x-stoplight:
+            id: 6eopgi4iu82ds
+          format: uuid
+        content:
+          type: string
+          x-stoplight:
+            id: sgg7ug4rde3b3
+        author:
+          $ref: '#/components/schemas/UserId'
+        likes:
+          type: integer
+          x-stoplight:
+            id: 7whfucvqoz0v6
+    Post:
+      title: Post
+      x-stoplight:
+        id: jk2r4veis02i6
+      type: object
+      properties:
+        post_id:
+          type: string
+          x-stoplight:
+            id: 32j6os5n0kjbd
+          format: uuid
+        body:
+          type: string
+          x-stoplight:
+            id: ldoqthbn1q7um
+        author:
+          $ref: '#/components/schemas/UserId'
+        date_added:
+          type: string
+          x-stoplight:
+            id: tme843ppevx1n
+          format: date-time
+        image:
+          $ref: '#/components/schemas/MediaData'
+        comments:
+          type: array
+          x-stoplight:
+            id: txxyn0qnvlv8p
+          items:
+            $ref: '#/components/schemas/Comment'
+        hashtags:
+          type: array
+          x-stoplight:
+            id: voti0rrzh8myl
+          items:
+            x-stoplight:
+              id: tgm7ltain39s8
+            type: string
+        likes:
+          type: integer
+          x-stoplight:
+            id: vhoywd46cus2e
+    MessageOverview:
+      title: MessageOverview
+      x-stoplight:
+        id: scl64jbt3nqia
+      type: object
+      properties:
+        chat_name:
+          type: string
+          x-stoplight:
+            id: 6nu0hezvodpzd
+        last_message:
+          type: string
+          x-stoplight:
+            id: x26m8wdef1579
+        last_message_author:
+          $ref: '#/components/schemas/UserId'
+        last_message_datetime:
+          type: string
+          x-stoplight:
+            id: vabxuaon7jclv
+          format: date-time
+        chat_avatar:
+          $ref: '#/components/schemas/MediaData'
+      description: |
+        Overall info about chats (like what we see when we enter TG or VK in messages)
+    Message:
+      title: Message
+      x-stoplight:
+        id: 1639wpqew2vp6
+      type: object
+      required:
+        - delivered_time
+        - content
+        - user_id
+      properties:
+        delivered_time:
+          type: string
+          x-stoplight:
+            id: 0s7qw418ep3gy
+          format: date-time
+        content:
+          type: string
+          x-stoplight:
+            id: evtlwxfesmmcq
+        user_id:
+          x-stoplight:
+            id: sllprg55aiumn
+          type: string
+          format: uuid
+        media_data:
+          $ref: '#/components/schemas/MediaData'
+      description: ''
+  responses:
+    friendResponse:
+      description: A new friend has been successfully added
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/NewFriend'
+    badRequest:
+      description: Request bad on the client side
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    unauthorized:
+      description: Reponse if user is unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    serverError:
+      description: Reponse if server is down
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    notEnoughRights:
+      description: Response if user does not have enough permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    userAbout:
+      description: List of all friends of the user
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AboutPage'
+    allFriends:
+      description: List of all friends of the user
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Friend'
+    notFound:
+      description: Response if user is not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    addedNewPost:
+      description: New post has been added
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/requestBodies/Post'
+    dataNotFound:
+      description: Response if data is not founded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    userFeed:
+      description: 'List of posts of user''s feed page '
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Post'
+    homeFeed:
+      description: Home page of feed response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Post'
+    MessageOverview:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MessageOverview'
+    ChatMessagesResponse:
+      description: Chat response of list messages
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Message'
+    ChatNotFound:
+      description: Response if chat not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    addedMessage:
+      description: Success response of sended message
+      content:
+        application/json:
+          schema:
+            type: string
+  parameters:
+    userId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID id of User
+    messageId:
+      name: messageId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  requestBodies:
+    Post:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Post'
+      description: A Post request form
+    MediaData:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MediaData'
+      description: MediaData form
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
